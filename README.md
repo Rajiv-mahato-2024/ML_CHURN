@@ -1,50 +1,199 @@
-# ML Churn
+# Customer Churn Prediction
 
-This project trains a small customer-churn model using a synthetic dataset and exposes prediction interfaces.
+A machine learning project that predicts whether a customer is likely to churn based on customer demographics, services, contract information, and billing details.
 
-## Set up the environment
+## Project Overview
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
+Customer churn is an important business problem.
+
+If a company can identify customers who are likely to leave, it can take preventive actions such as:
+
+- Offering discounts
+- Providing better support
+- Improving customer experience
+- Offering personalized plans
+
+This project builds an end-to-end machine learning system for customer churn prediction.
+
+## Machine Learning Pipeline
+
+Data
+↓
+Data Cleaning
+↓
+Exploratory Data Analysis
+↓
+Feature Engineering
+↓
+Train/Test Split
+↓
+Model Training
+↓
+Model Evaluation
+↓
+Hyperparameter Tuning
+↓
+Model Saving
+↓
+FastAPI
+↓
+Streamlit
+↓
+Docker
+↓
+Deployment
+
+## Technologies Used
+
+- Python
+- Pandas
+- NumPy
+- Scikit-learn
+- Matplotlib
+- Seaborn
+- FastAPI
+- Streamlit
+- Joblib
+- Docker
+
+## Machine Learning Models
+
+The project experiments with:
+
+- Logistic Regression
+- Decision Tree
+- Random Forest
+
+Random Forest is tuned using GridSearchCV.
+
+## Features
+
+The model uses customer information such as:
+
+- Gender
+- Senior Citizen
+- Partner
+- Dependents
+- Tenure
+- Internet Service
+- Online Security
+- Online Backup
+- Device Protection
+- Tech Support
+- Contract
+- Payment Method
+- Monthly Charges
+- Total Charges
+
+## Model Evaluation
+
+The models are evaluated using:
+
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+- Confusion Matrix
+- ROC-AUC
+
+Because customer churn datasets can be imbalanced, accuracy alone is not used to judge model performance.
+
+## API
+
+The project provides a FastAPI backend.
+
+### Health Check
+
+GET:
+
+/health
+
+### Prediction
+
+POST:
+
+/predict
+
+Example response:
+
+{
+    "prediction": 1,
+    "churn_probability": 0.82
+}
+
+Where:
+
+0 = Customer is unlikely to churn
+
+1 = Customer is likely to churn
+
+## Running the Project
+
+Clone the repository:
+
+git clone YOUR_GITHUB_REPOSITORY_URL
+
+Move into the project:
+
+cd customer-churn-ml
+
+Create virtual environment:
+
+python3 -m venv venv
+
+Activate:
+
+source venv/bin/activate
+
+Install dependencies:
+
 pip install -r requirements.txt
-```
 
-## Train the model
+## Run FastAPI
 
-```bash
-python -m src.train
-```
+uvicorn app.main:app --reload
 
-## Tune the model
+Open:
 
-```bash
-python -m src.tune_model
-```
+http://127.0.0.1:8000/docs
 
-## Run the FastAPI service
+## Run Streamlit
+
+If the API is running on a different host port, set `API_URL` to match. For
+example, when Docker publishes the API on port `8001`:
 
 ```bash
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+API_URL=http://127.0.0.1:8001/predict streamlit run app/streamlit_app.py
 ```
 
-Open the interactive API documentation at http://127.0.0.1:8000/docs.
+Without `API_URL`, Streamlit uses `http://127.0.0.1:8000/predict`.
 
-The `/predict` endpoint accepts `tenure`, `monthly_charges`, `total_charges`,
-`contract_type`, `internet_service`, and `support`.
-
-## Run the Streamlit app
-
-```bash
 streamlit run app/streamlit_app.py
-```
 
-## Structure
+## Docker
 
-- `src/data_cleaning.py`: dataset generation and data cleaning
-- `src/feature_engineering.py`: preprocessing for numeric and categorical fields
-- `src/train.py`: training and model saving logic
-- `src/tune_model.py`: cross-validated logistic-regression tuning
-- `src/predict.py`: prediction helper for a single record
-- `app/main.py`: FastAPI prediction service
-- `app/streamlit_app.py`: Streamlit prediction interface
+Build the Docker image:
+
+docker build -t customer-churn-api .
+
+Run the container:
+
+docker run -p 8001:8000 customer-churn-api
+
+Port `8001` is the host port; use `API_URL=http://127.0.0.1:8001/predict`
+when starting Streamlit if port `8000` is already in use.
+
+## Future Improvements
+
+- Cloud deployment
+- Model monitoring
+- Data drift detection
+- Automated retraining
+- CI/CD pipeline
+- Model versioning
+- Authentication
+- Database integration
+
+## Author
+
+Rajiv Mahato

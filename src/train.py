@@ -1,20 +1,14 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
 import joblib
-import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
-from src.data_cleaning import clean_customer_data, load_or_create_dataset
+from src.data_cleaning import clean_customer_data
 from src.feature_engineering import build_feature_pipeline
 
 MODEL_PATH = Path(__file__).resolve().parents[1] / "models" / "churn_model.pkl"
@@ -47,7 +41,8 @@ def train_model(data):
     predictions = model.predict(X_test)
     metrics = {
         "accuracy": accuracy_score(y_test, predictions),
-        "f1": f1_score(y_test, predictions),
+        "f1": f1_score(y_test, predictions, zero_division=0),
+        "roc_auc": roc_auc_score(y_test, model.predict_proba(X_test)[:, 1]),
     }
     return model, metrics
 
@@ -61,10 +56,6 @@ def train_and_save_model(data, path: str | Path = MODEL_PATH):
 
 
 if __name__ == "__main__":
-    dataset = load_or_create_dataset()
-    model, metrics = train_and_save_model(dataset)
-    print(f"Training complete. Accuracy: {metrics['accuracy']:.3f}")
-    print(f"F1 score: {metrics['f1']:.3f}")
-    print(f"Model saved to: {MODEL_PATH}")
-    sample_row = dataset.drop(columns=["churn"]).iloc[0].to_dict()
-    print(f"Sample prediction: {model.predict(pd.DataFrame([sample_row]))[0]}")
+    from src.pipeline import run_pipeline
+
+    run_pipeline()

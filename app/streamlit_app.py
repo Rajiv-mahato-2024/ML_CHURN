@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import os
+
 import requests
 import streamlit as st
 
-API_URL = "http://127.0.0.1:8000/predict"
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/predict")
 
 st.title("Customer Churn Prediction")
 st.write("Enter customer information to predict whether the customer may churn.")

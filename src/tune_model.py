@@ -1,39 +1,23 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 import joblib
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, train_test_split
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.model_selection import (
+    GridSearchCV,
+    StratifiedKFold,
+    train_test_split,
+)
 from sklearn.pipeline import Pipeline
 
-from src.data_cleaning import clean_customer_data, load_or_create_dataset
+from src.data_cleaning import clean_customer_data
 from src.feature_engineering import build_feature_pipeline
 from src.train import MODEL_PATH
 
 
-def tune_and_save_model(data, path: str | Path = MODEL_PATH):
-    cleaned = clean_customer_data(data)
-    if "customer_id" in cleaned.columns:
-        features = cleaned.drop(columns=["customer_id", "churn"])
-    else:
-        features = cleaned.drop(columns=["churn"])
-    target = cleaned["churn"].astype(int)
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        features,
-        target,
-        test_size=0.2,
-        random_state=42,
-        stratify=target,
-    )
-
+def build_tuned_model(X_train, y_train):
     pipeline = Pipeline(
         steps=[
             ("preprocessor", build_feature_pipeline()),
@@ -51,15 +35,35 @@ def tune_and_save_model(data, path: str | Path = MODEL_PATH):
         n_jobs=1,
     )
     search.fit(X_train, y_train)
-
-    model = search.best_estimator_
-    predictions = model.predict(X_test)
-    metrics = {
-        "accuracy": accuracy_score(y_test, predictions),
-        "f1": f1_score(y_test, predictions),
-        "best_cv_f1": search.best_score_,
+    return search.best_estimator_, {
+        "best_cv_f1": float(search.best_score_),
         "best_params": search.best_params_,
     }
+
+
+def tune_and_save_model(data, path: str | Path = MODEL_PATH):
+    cleaned = clean_customer_data(data)
+    features = cleaned.drop(columns=["customer_id", "churn"], errors="ignore")
+    target = cleaned["churn"].astype(int)
+    X_train, X_test, y_train, y_test = train_test_split(
+        features,
+        target,
+        test_size=0.2,
+        random_state=42,
+        stratify=target,
+    )
+
+    model, metrics = build_tuned_model(X_train, y_train)
+    predictions = model.predict(X_test)
+    metrics.update(
+        {
+            "accuracy": accuracy_score(y_test, predictions),
+            "f1": f1_score(y_test, predictions, zero_division=0),
+            "roc_auc": roc_auc_score(
+                y_test, model.predict_proba(X_test)[:, 1]
+            ),
+        }
+    )
 
     model_path = Path(path)
     model_path.parent.mkdir(parents=True, exist_ok=True)
@@ -68,10 +72,6 @@ def tune_and_save_model(data, path: str | Path = MODEL_PATH):
 
 
 if __name__ == "__main__":
-    dataset = load_or_create_dataset()
-    _, metrics = tune_and_save_model(dataset)
-    print(f"Tuned model saved to: {MODEL_PATH}")
-    print(f"Best cross-validation F1: {metrics['best_cv_f1']:.3f}")
-    print(f"Test accuracy: {metrics['accuracy']:.3f}")
-    print(f"Test F1: {metrics['f1']:.3f}")
-    print(f"Best parameters: {metrics['best_params']}")
+    from src.pipeline import run_pipeline
+
+    run_pipeline(tune=True)
